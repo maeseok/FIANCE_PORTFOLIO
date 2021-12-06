@@ -9,7 +9,6 @@ import requests
 
 #----업데이트 추가 목록---- 
 # 합산 가격도 추가해야함
-# 모든 내용 초기화하는 버튼 만들지 고민필요
 
 
 
@@ -193,8 +192,7 @@ def buy_save(item, buyprice, buynumber):
     try:
         #변수에 정보 저장 후 파일에 내용 추가 
         buyreturn = item+"\n"+buyprice+"\n"+buynumber
-        buypath = "./PORTFOLIO/BUY.txt"
-        #buypath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
+        buypath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
         file = open(buypath, 'a')
         file.write(buyreturn.strip())
         file.write("\n")
@@ -222,7 +220,9 @@ def buy_correct(item, price, number, buycollect):
         for i in range(0,len(buycollect)):
             file.write(buycollect[i])
             file.write("\n")
+        print("알림 : <매수를 완료했습니다.>")
         file.close()
+        
     except:
         print("알림 : <매수 정보 수정 중 오류가 발생했습니다.>")
 
@@ -396,7 +396,28 @@ def open_profit():
     except:
         print("알림 : <오류가 발생했습니다.>")
         
+#포트폴리오 초기화
+def portfolio_initialize(stock_item):
+    item=[]
+    Size = len(stock_item) / 3
+    for i in range(0,int(Size)):
+        #초기화할 종목을 리스트에 저장
+        item.append(stock_item[3*i])   
         
+    path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
+    file = open(path, 'w')
+    path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
+    file = open(path, 'w')
+    path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
+    file = open(path, 'w')   
+    
+    for j in range(0,len(item)):
+        itempath = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item[j]+".txt"
+        itemfile = open(itempath, 'w')
+        
+    file.close() 
+    itemfile.close()
+
         
 #기본 setting
 COSPI,KOSDAQ= db_connect()
@@ -414,7 +435,7 @@ while True:
     #포트폴리오
     if (choice == "1"):
         print("=========================메뉴===========================")
-        choice2 = input("1 : 매수  2 : 매도  3 : 포트폴리오 조회 4: 매도수익 \n번호 : ")
+        choice2 = input("1 : 매수  2 : 매도  3 : 포트폴리오 조회 4: 매도수익 5: 초기화 \n번호 : ")
         print("========================================================")
         
         if(choice2 == "1"):
@@ -576,9 +597,27 @@ while True:
                     print(PLcollect[i])
             except:
                 print("알림 : <매도 수익 조회 중 오류가 발생했습니다.>")
+        #초기화    
+        elif(choice2 == "5"):
+            try:
+                print("알림 : <정말로 포트폴리오를 초기화 하시겠습니까?>")
+                get_choice="\0"
+                get_choice = input("Y or N : ")
+                if(get_choice == "Y"):
+                    stock_item = buy_open()
+                    portfolio_initialize(stock_item)
+                    print("알림 : <초기화를 완료하였습니다.>")
+                elif(get_choice == "N"):
+                    print("알림 : <메뉴로 돌아갑니다.>")
+                    continue
+                else:
+                    print("알림 : <입력을 확인해주세요>")
+                    continue
+            except:
+                print("알림 : <초기화 중 오류가 발생했습니다.>")
+            
         else:
             print("알림 : <오류가 발생했습니다.>")
-            
     #조회      
     elif(choice == "2"):
         print("=========================메뉴===========================")
