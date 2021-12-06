@@ -122,12 +122,14 @@ def present_rate(code,item,frate,number):
     lastrate=value[0].replace(",","")   
     last = "현재가 : "+str(lastrate)+"원"
     rate_gap = int(lastrate) - int(firstrate)
-    present_profit = "현재 수익 : "+ str(rate_gap * number)+"원"
+    present_profit = "현재 수익 : "+ str(rate_gap * int(number))+"원"
     #수익률 계산
     rateprofit= rate_gap /int(firstrate)*100
     profit = "수익률 : {:.2f}".format(rateprofit)+"%"
-    
-    return profit,last,present_profit
+    #종목 현재 손익 계산
+    last_total = int(firstrate)*int(number)
+    present_total = last_total + rate_gap*int(number)
+    return profit,last,present_profit,present_total,last_total
         
 
 #날짜 형식 수정 함수
@@ -529,39 +531,53 @@ while True:
                 get_profit = []
                 get_presentrate = []
                 get_presentprofit = []
+                Buyremain=[]
+                ptotal=[]
+                ltotal=[]
+                last_total=0
+                present_total=0
                 longline = "========================================================"
 
                 #매수 정보 불러옴
                 Buyinfor = buy_open()
-                Size = len(Buyinfor) / 3
                 Sellinfor = sell_open()
+                Size = len(Buyinfor) / 3
                 for i in range(0,int(Size)):
                     #매수 종목을 리스트에 저장
                     Buyitem.append(Buyinfor[3*i])
-
+                
                 for i in range(0,len(Buyitem)):
                     for j in range(0,len(Buyinfor)):
                         if(Buyitem[i] == Buyinfor[j]): #종목 이름이 들어있는 항목의 위치를 찾음
-
-                            #해당 종목의 매도량을 저장함
-                            stocknumber = stock_item_open(Buyitem[i])
-                            #현재 남은 수량을 저장함
-                            Buyremain = int(Buyinfor[j+2]) - stocknumber
-                            #리스트에 최신화(리스트를 이용하여 출력할 것이기 때문이다.)
-                            Buyinfor[j+2] = Buyremain  
-
-                            #코드만 불러옴 
-                            get_code = only_code_made(COSPI,KOSDAQ,Buyitem[i])
-                            #현재 가격과 수익률 등을 저장함(출력할 내용들)
-                            get_profit, get_presentrate, get_presentprofit = present_rate(get_code,Buyitem[i],Buyinfor[j+1],Buyremain)
-                            #리스트에 출력할 내용을 추가함
+                            #매도한 내용이 있는지 확인
+                            if(len(Sellinfor) != 0):
+                                for p in range(0,len(Sellinfor)):
+                                    if(Buyinfor[j] == Sellinfor[p]):
+                                        #해당 종목의 매도량을 저장함
+                                        stocknumber = stock_item_open(Buyitem[i])
+                                        #현재 남은 수량을 저장함
+                                        Buyremain = int(Buyinfor[j+2]) - stocknumber
+                                        #리스트에 최신화(리스트를 이용하여 출력할 것이기 때문이다.)
+                                        Buyinfor[j+2] = Buyremain 
+                                        #코드만 불러옴 
+                                    else:
+                                        Buyremain = Buyinfor[j+2]
+                            
+                            else:
+                                #매도 내용이 없으면 현재 수량을 남은 수량으로 저장
+                                Buyremain = Buyinfor[j+2]
+                            #최종적으로 종목을 출력 형식에 맞게 값을 변형시킴
+                            get_code = only_code_made(COSPI,KOSDAQ,Buyitem[i])   
+                            get_profit, get_presentrate, get_presentprofit,get_ptotal,get_ltotal = present_rate(get_code,Buyitem[i],Buyinfor[j+1],Buyremain) 
+                            ptotal.append(get_ptotal)
+                            ltotal.append(get_ltotal)
                             Buyinfor.insert(j+2,get_presentrate)
                             Buyinfor.insert(j+3,get_profit)
                             Buyinfor.insert(j+5,get_presentprofit)
                             Buyinfor.insert(j+6,longline)
+
                         else:
                             pass
-
 
                 for l in range(0, len(Buyinfor)):
                     if(Buyinfor[l] == 0):
@@ -582,10 +598,17 @@ while True:
                     else:
                         pass
 
-
                 #최종 내용 출력
                 for u in range(0,len(Buyinfor)):
                     print(Buyinfor[u])
+                    
+                for n in range(0,len(ltotal)):
+                    last_total += ltotal[n] 
+                    present_total += ptotal[n] 
+                total_profit = (present_total-last_total)/last_total*100
+                print("구매 총합 : "+str(last_total)+"원")
+                print("현재 총합 : "+str(present_total)+"원")
+                print("총 수익률 : {:.2f}".format(total_profit)+"%")
             except:
                 print("알림 : <포트폴리오 조회 중 오류가 발생했습니다.>")
                 
