@@ -6,12 +6,6 @@ import pickle
 import datetime
 import requests
 
-
-#----업데이트 추가 목록---- 
-# 합산 가격도 추가해야함
-
-
-
 #완료 후 차트로 넘어감
 
 
@@ -188,7 +182,18 @@ def profit_save(item,first,last,profit):
         
     except:
         print("알림 : <오류가 발생했습니다.>")
-
+        
+#수익률 조회한 종목 저장 함수
+def save_item(item):
+    try:
+        path = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/ITEM.txt"
+        file = open(path,"a")
+        file.write(item.strip())
+        file.write("\n")
+        file.close()
+    except:
+        print("알림 : <수익률 조회 종목 저장 중 오류가 발생했습니다.>")
+    
 #매수 정보 저장 함수
 def buy_save(item, buyprice, buynumber):
     try:
@@ -431,14 +436,14 @@ collect=[]
 while True:
     
     print("\n=========================메뉴===========================")
-    choice = input("1 : 포트폴리오 2 : 시세 조회 3 : 시세 출력 4 : 종료\n번호 : ")
+    choice = input("1 : 포트폴리오 2 : 시세 조회 3 : 시세 출력 4 : 초기화 5 : 종료\n번호 : ")
     print("========================================================")
     
 
     #포트폴리오
     if (choice == "1"):
         print("=========================메뉴===========================")
-        choice2 = input("1 : 매수  2 : 매도  3 : 포트폴리오 조회 4: 매도수익 5: 초기화 \n번호 : ")
+        choice2 = input("1 : 매수  2 : 매도  3 : 포트폴리오 조회 4: 매도수익 \n번호 : ")
         print("========================================================")
         
         if(choice2 == "1"):
@@ -622,25 +627,7 @@ while True:
                     print(PLcollect[i])
             except:
                 print("알림 : <매도 수익 조회 중 오류가 발생했습니다.>")
-        #초기화    
-        elif(choice2 == "5"):
-            try:
-                print("알림 : <정말로 포트폴리오를 초기화 하시겠습니까?>")
-                get_choice="\0"
-                get_choice = input("Y or N : ")
-                if(get_choice == "Y"):
-                    stock_item = buy_open()
-                    portfolio_initialize(stock_item)
-                    print("알림 : <초기화를 완료하였습니다.>")
-                elif(get_choice == "N"):
-                    print("알림 : <메뉴로 돌아갑니다.>")
-                    continue
-                else:
-                    print("알림 : <입력을 확인해주세요>")
-                    continue
-            except:
-                print("알림 : <초기화 중 오류가 발생했습니다.>")
-            
+
         else:
             print("알림 : <오류가 발생했습니다.>")
     #조회      
@@ -708,6 +695,7 @@ while True:
 
                     if(choice6 == "1"):
                         profit_save(item4,first,last,profit)
+                        save_item(item4)
 
                     elif(choice6 == "2"):
                         print("알림 : <메뉴로 돌아갑니다.>")
@@ -816,8 +804,38 @@ while True:
         else:
             print("알림 : <오류가 발생했습니다.>")
             continue   
+    #초기화
+    elif(choice =="4"):
+        print("=========================메뉴===========================")
+        choice9 = input("1 : 포트폴리오 초기화  2 : 수익률 조회 초기화 3 : 나가기\n번호 : ")
+        if(choice9 == "1"):
+            try:
+                print("알림 : <정말로 포트폴리오를 초기화 하시겠습니까?>")
+                get_choice="\0"
+                get_choice = input("Y or N : ")
+                if(get_choice == "Y"):
+                    stock_item = buy_open()
+                    portfolio_initialize(stock_item)
+                    print("알림 : <초기화를 완료하였습니다.>")
+                elif(get_choice == "N"):
+                    print("알림 : <메뉴로 돌아갑니다.>")
+                    continue
+                else:
+                    print("알림 : <입력을 확인해주세요>")
+                    continue
+            except:
+                print("알림 : <초기화 중 오류가 발생했습니다.>")
+        elif(choice9 == "2"):
+            pass
+        elif(choice9 == "3"):
+            print("알림 : <메뉴로 돌아갑니다.>")
+            continue
+        else:
+            print("알림 : <입력을 확인해주세요.>")
+            continue
+        
     #종료
-    elif(choice == "4"):
+    elif(choice == "5"):
         print("알림 : <프로그램을 종료합니다.>")
         break 
 
