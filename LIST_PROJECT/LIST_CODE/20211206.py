@@ -6,6 +6,7 @@ import pickle
 import datetime
 import requests
 
+#매도 수익 계산 중 오류가 발생하면 그 값을 빼야함 SELL.txt에서
 #완료 후 차트로 넘어감
 
 
@@ -74,16 +75,14 @@ def rate_import(code, firstdate, lastdate,item,nowDATE):
             if (firstrate!="0" and lastrate!="0"):
                 break
 
-        first = "매수 지점 > "+firstdate+" : "+firstrate+"원"
-        
-        if(lastdate == nowDATE):
-            last = "현재 지점 > "+lastdate+" : "+lastrate+"원"
-        else :
-            last = "매도 지점 > "+lastdate+" : "+lastrate+"원"
+        get_first = format(int(firstrate),',')
+        first = "매수 지점 > "+firstdate+" : "+get_first+"원"
+        get_last = format(int(lastrate),',')
+        last = "매도 지점 > "+lastdate+" : "+get_last+"원"
             
         #수익률 계산
         rateprofit=(int(lastrate)-int(firstrate))/int(firstrate)*100
-        profit = "수익률 : {:.2f}".format(rateprofit)+"%"
+        profit = "수익률 : {:.2f}".format(rateprofit,',')+"%"
         print(item)
         print(first)
         print(last)
@@ -92,68 +91,81 @@ def rate_import(code, firstdate, lastdate,item,nowDATE):
         return profit,first,last
         
     except:
-        print("알림 : <오류가 발생했습니다.>")
+        print("알림 : <수익률 계산 중 오류가 발생했습니다.>")
 
 #현재 시세만 불러오는 함수
 def present_rate(code,item,frate,number):
-    #봇이 아님을 증명하는 값
-    headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62'}
-    
-    value=[]
-    url="https://finance.naver.com/item/sise_day.nhn?code="+code+"&page=1"
-    data = requests.get(url,headers=headers)            
-    soup = BeautifulSoup(data.text, 'html.parser')
-    #시세 정보 수집
-    eventvalue = soup.find_all('span','tah p11')
+    try:
+        #봇이 아님을 증명하는 값
+        headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62'}
+        
+        value=[]
+        url="https://finance.naver.com/item/sise_day.nhn?code="+code+"&page=1"
+        data = requests.get(url,headers=headers)            
+        soup = BeautifulSoup(data.text, 'html.parser')
+        #시세 정보 수집
+        eventvalue = soup.find_all('span','tah p11')
 
-    #필요없는 값 제거
-    for i in range(0,len(eventvalue)):
-        if (eventvalue[i].get_text() != "0"):
-            value.append(eventvalue[i].get_text())
-        else :
-            pass                        
-    firstrate=frate
-    lastrate=value[0].replace(",","")   
-    last = "현재가 : "+str(lastrate)+"원"
-    rate_gap = int(lastrate) - int(firstrate)
-    present_profit = "현재 수익 : "+ str(rate_gap * int(number))+"원"
-    #수익률 계산
-    rateprofit= rate_gap /int(firstrate)*100
-    profit = "수익률 : {:.2f}".format(rateprofit)+"%"
-    #종목 현재 손익 계산
-    last_total = int(firstrate)*int(number)
-    present_total = last_total + rate_gap*int(number)
-    return profit,last,present_profit,present_total,last_total
+        #필요없는 값 제거
+        for i in range(0,len(eventvalue)):
+            if (eventvalue[i].get_text() != "0"):
+                value.append(eventvalue[i].get_text())
+            else :
+                pass                        
+        firstrate=frate
+        lastrate=value[0].replace(",","")
+        lrate = value[0]   
+        last = "현재가 : "+lrate+"원"
+        rate_gap = int(lastrate) - int(firstrate)
+        get_prprofit = format(rate_gap * int(number),',')
+        present_profit = "현재 수익 : "+ get_prprofit+"원"
+        #수익률 계산
+        rateprofit= rate_gap /int(firstrate)*100
+        profit = "수익률 : "+"{:0,.2f}".format(rateprofit)+"%"
+        #종목 현재 손익 계산
+        last_total = int(firstrate)*int(number)
+        present_total = last_total + rate_gap*int(number)
+        return profit,last,present_profit,present_total,last_total
+    except:
+        print("알림 : <현재 시세를 불러오는 중 오류가 발생했습니다.>")
         
 
 #날짜 형식 수정 함수
 def date_format(date):
-    date = str(date).replace('-','.')
-    return date
+    try:
+        date = str(date).replace('-','.')
+        return date
+    except:
+        print("알림 : <날짜 형식 수정 중 오류가 발생했습니다.")
         
 #현재 시간 불러오는 함수
 def time_format():
-    now = datetime.datetime.now()
-    nowDATE=now.strftime('%Y.%m.%d')
-    return nowDATE
-
+    try:
+        now = datetime.datetime.now()
+        nowDATE=now.strftime('%Y.%m.%d')
+        return nowDATE
+    except:
+        print("알림 : <현재 시간을 불러오는 중 오류가 발생했습니다.")
 #코드 DB연결 함수 
 def db_connect():
-    #DB(코드 값) 불러오기
-    f = open('/workspace/20210511/FINANCE/LIST_PROJECT/DBandDB_SOURCE/COSPI.txt', 'rb')    
-    f2 = open('/workspace/20210511/FINANCE/LIST_PROJECT/DBandDB_SOURCE/KOSDAQ.txt', 'rb')
-    COSPI = pickle.load(f)
-    KOSDAQ = pickle.load(f2)
-    f.close()
-    f2.close()
-    #종목 코드 값을 가진 딕셔너리 반환
-    return COSPI,KOSDAQ
-
+    try:
+        #DB(코드 값) 불러오기
+        f = open('/FINANCE/LIST_PROJECT/DBandDB_SOURCE/COSPI.txt', 'rb')    
+        f2 = open('/FINANCE/LIST_PROJECT/DBandDB_SOURCE/KOSDAQ.txt', 'rb')
+        COSPI = pickle.load(f)
+        KOSDAQ = pickle.load(f2)
+        #종목 코드 값을 가진 딕셔너리 반환
+        return COSPI,KOSDAQ
+    except:
+        print("알림 : <코드를 불러오는 중 오류가 발생했습니다.")
+    finally:
+        f.close()
+        f2.close()
 #종목 저장 함수
 def finance_save(nowDATE):
     try:
         #해당 날짜 파일에 저장
-        path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/FINANCE_DB/"+nowDATE+".txt"
+        path="/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/FINANCE_DB/"+nowDATE+".txt"
         file = open(path, 'a')
         file.write(rate.strip())
         file.write("\n")
@@ -172,7 +184,7 @@ def profit_save(item,first,last,profit):
         ratereturn = item+"\n"+first+"\n"+last+"\n"+str(profit)
         longline = "--------------------------------------------------------"
         print(ratereturn)
-        profitpath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/"+item+".txt"
+        profitpath= "/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/"+item+".txt"
         file = open(profitpath, 'a')
         file.write(ratereturn.strip())
         file.write("\n"+longline)
@@ -186,20 +198,38 @@ def profit_save(item,first,last,profit):
 #수익률 조회한 종목 저장 함수
 def save_item(item):
     try:
-        path = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/ITEM.txt"
+        path = "/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/ITEM.txt"
         file = open(path,"a")
         file.write(item.strip())
         file.write("\n")
         file.close()
     except:
         print("알림 : <수익률 조회 종목 저장 중 오류가 발생했습니다.>")
-    
+#수익률 조회한 종목 불러오는 함수
+def open_item():
+    try:
+        path = "/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/ITEM.txt"
+        file = open(path,'r')
+        item = file.read().splitlines()
+        file.close()
+        return item
+    except:
+        print("알림 : <수익률 조회 종목 불러오는 중 오류가 발생했습니다.>")
+#수익률 조회한 종목 초기화하는 함수
+def reset_item():
+    try:
+        path = "/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/ITEM.txt"
+        file = open(path,'w')
+        file.close() 
+        
+    except:
+        print("알림 : <수익률 조회 종목 초기화 중 오류가 발생했습니다.>")
 #매수 정보 저장 함수
 def buy_save(item, buyprice, buynumber):
     try:
         #변수에 정보 저장 후 파일에 내용 추가 
         buyreturn = item+"\n"+buyprice+"\n"+buynumber
-        buypath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
+        buypath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
         file = open(buypath, 'a')
         file.write(buyreturn.strip())
         file.write("\n")
@@ -222,7 +252,7 @@ def buy_correct(item, price, number, buycollect):
             else:
                 pass
         #내용 모두 날리고 변경된 내용으로 새로 저장
-        buypath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
+        buypath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
         file = open(buypath, 'w')
         for i in range(0,len(buycollect)):
             file.write(buycollect[i])
@@ -236,7 +266,7 @@ def buy_correct(item, price, number, buycollect):
 #매수 정보 여는 함수
 def buy_open():
     try:
-        buypath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
+        buypath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
         file = open(buypath, 'r')
         buycollect=file.read().splitlines()
         file.close()
@@ -248,7 +278,7 @@ def buy_open():
 def sell_save(item, sellprice, sellnumber):
     try:
         sellreturn = item+"\n"+sellprice+"\n"+sellnumber
-        sellpath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
+        sellpath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
         file = open(sellpath, 'a')
         file.write(sellreturn.strip())
         file.write("\n")
@@ -259,7 +289,7 @@ def sell_save(item, sellprice, sellnumber):
 #매도 정보 여는 함수  
 def sell_open():
     try:
-        sellpath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
+        sellpath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
         file = open(sellpath, 'r')
         sellcollect=file.read().splitlines()
         file.close()
@@ -270,16 +300,23 @@ def sell_open():
 #손익 계산하여 저장하는 함수
 def profit_and_loss(item, saveprice, sellprice, remainprice, remainnumber):
     try:
-        buy = "매수 가격 : " + saveprice + "원"
-        sell = "매도 가격 : " + sellprice + "원"
+        get_saveprice = format(int(saveprice),',')
+        buy = "매수 가격 : " + get_saveprice + "원"
+        get_sellprice = format(int(sellprice),',')
+        sell = "매도 가격 : " + get_sellprice + "원"
+
         profit = (int(sellprice) - int(saveprice)) / int(saveprice) *100
-        profits = "수익률 : {:.2f}".format(profit)+"%"
+        profits = "수익률 : "+"{:0,.2f}".format(profit,',')+"%"
+
         realprofit = int(remainprice) * int(remainnumber)
-        realprofits = "실현 손익 : " + str(realprofit) + "원"
-        sellnumber = "매도 수량 : " + remainnumber + "주"
+        get_realprofit = format(realprofit,',')
+        realprofits = "실현 손익 : " + get_realprofit + "원"
+
+        get_remainnumber = format(int(remainnumber),',')
+        sellnumber = "매도 수량 : " + get_remainnumber + "주"
 
         PLreturn = item+"\n"+buy+"\n"+sell+"\n"+sellnumber+"\n"+profits+"\n"+realprofits
-        PLpath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
+        PLpath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
         file = open(PLpath, 'a')
         file.write("========================================================\n")
         file.write(PLreturn.strip())
@@ -291,7 +328,7 @@ def profit_and_loss(item, saveprice, sellprice, remainprice, remainnumber):
 #손익 정보 불러오는 함수
 def pl_open():
     try:
-        PLpath= "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
+        PLpath= "/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
         file = open(PLpath, 'r')
         PLcollect = file.read().splitlines()
         file.close()
@@ -302,7 +339,7 @@ def pl_open():
 #종목과 매도수량 저장하는 함수
 def stock_item_save(item, sellnumber):
     try:
-        stockpath = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
+        stockpath = "/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
         file = open(stockpath, 'a')
         file.write(sellnumber.strip())
         file.write("\n")
@@ -314,7 +351,7 @@ def stock_item_save(item, sellnumber):
 def stock_item_check(item, buynumber):
     try:
         stocknumber = 0
-        stockpath = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
+        stockpath = "/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
         file = open(stockpath, 'r')
         stockcollect = file.read().splitlines()
         file.close()
@@ -335,7 +372,7 @@ def stock_item_check(item, buynumber):
 #매도량이 매수량을 넘은 경우 수정하는 함수
 def stock_item_correct(item):
     try:
-        stockpath = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
+        stockpath = "/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
         file = open(stockpath, 'r')
         stockcollect = file.read().splitlines()
         file = open(stockpath, 'w')
@@ -351,7 +388,7 @@ def stock_item_correct(item):
 def stock_item_open(item):
     try:
         stocknumber = 0
-        stockpath = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
+        stockpath = "/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item+".txt"
         file = open(stockpath, 'r')
         stockcollect = file.read().splitlines()
         file.close()
@@ -396,7 +433,7 @@ def only_code_made(COSPI,KOSDAQ,item):
 #수익률 출력하는 함수
 def open_profit():
     try:
-        itempath="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/"+acitem+".txt"
+        itempath="/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/"+acitem+".txt"
         file = open(itempath, 'r')
         content = file.read().splitlines()
         file.close()
@@ -406,25 +443,38 @@ def open_profit():
         
 #포트폴리오 초기화
 def portfolio_initialize(stock_item):
-    item=[]
-    Size = len(stock_item) / 3
-    for i in range(0,int(Size)):
-        #초기화할 종목을 리스트에 저장
-        item.append(stock_item[3*i])   
+    try:
+        item=[]
+        Size = len(stock_item) / 3
+        for i in range(0,int(Size)):
+            #초기화할 종목을 리스트에 저장
+            item.append(stock_item[3*i])   
+            
+        path="/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
+        file = open(path, 'w')
+        path="/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
+        file = open(path, 'w')
+        path="/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
+        file = open(path, 'w')   
         
-    path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/BUY.txt"
-    file = open(path, 'w')
-    path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/PROFIT.txt"
-    file = open(path, 'w')
-    path="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/PORTFOLIO/SELL.txt"
-    file = open(path, 'w')   
-    
-    for j in range(0,len(item)):
-        itempath = "/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item[j]+".txt"
-        itemfile = open(itempath, 'w')
-        
-    file.close() 
-    itemfile.close()
+        for j in range(0,len(item)):
+            itempath = "/FINANCE/LIST_PROJECT/LIST_CODE/STOCK_ITEM/"+item[j]+".txt"
+            itemfile = open(itempath, 'w')
+            itemfile.close()
+        file.close() 
+    except:
+        print("알림 : <포트폴리오 초기화 중 오류가 발생했습니다.>")
+#수익률 초기화
+def reset_profit(openitem):
+    try:
+        for i in range(0,len(openitem)):
+            path = "/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/"+openitem[i]+".txt"
+            openfile = open(path, 'w')
+    except:
+        print("알림 : <수익률 초기화 중 오류가 발생했습니다.")
+    finally:
+        openfile.close()
+
 
         
 #기본 setting
@@ -580,7 +630,6 @@ while True:
                             Buyinfor.insert(j+3,get_profit)
                             Buyinfor.insert(j+5,get_presentprofit)
                             Buyinfor.insert(j+6,longline)
-
                         else:
                             pass
 
@@ -595,11 +644,15 @@ while True:
                 #입력된 내용을 형식적으로 다듬는 과정
                 for k in range(0,len(Buyinfor)):
                     if(k%7 == 1 ):
-                        average = "평단가 : "+ str(Buyinfor[k])+"원"
+                        average_rate = Buyinfor[k]
+                        get_average = format(int(average_rate),',')
+                        average = "평단가 : "+ get_average+"원"
                         Buyinfor[k] = average
                     elif(k%7 == 4):
-                        amount = "수량 : " + str(Buyinfor[k])+"주"
-                        Buyinfor[k] = amount
+                        amount = Buyinfor[k]
+                        get_amount = format(int(amount),',')
+                        stock_amount = "수량 : " + get_amount+"주"
+                        Buyinfor[k] = stock_amount
                     else:
                         pass
 
@@ -610,10 +663,17 @@ while True:
                 for n in range(0,len(ltotal)):
                     last_total += ltotal[n] 
                     present_total += ptotal[n] 
-                total_profit = (present_total-last_total)/last_total*100
-                print("구매 총합 : "+str(last_total)+"원")
-                print("현재 총합 : "+str(present_total)+"원")
-                print("총 수익률 : {:.2f}".format(total_profit)+"%")
+                #형식에 맞게 값 저장
+                get_latotal = format(last_total,',')
+                get_prtotal = format(present_total,',')
+                if(present_total-last_total== 0):
+                    print("구매 총합 : "+get_latotal+"원")
+                    print("현재 총합 : "+get_prtotal+"원")
+                else:
+                    total_profit = (present_total-last_total)/last_total*100
+                    print("구매 총합 : "+get_latotal+"원")
+                    print("현재 총합 : "+get_prtotal+"원")
+                    print("총 수익률 : "+"{:0,.2f}".format(total_profit)+"%")
             except:
                 print("알림 : <포트폴리오 조회 중 오류가 발생했습니다.>")
                 
@@ -719,7 +779,7 @@ while True:
                 acdate = input("접속할 날짜 입력 : ")
                 #입력한 날짜 형식을 일정한 형태로 수정하는 함수 불러옴
                 date=date_format(acdate)
-                datepath="/workspace/20210511/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/FINANCE_DB/"+date+".txt"
+                datepath="/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/FINANCE_DB/"+date+".txt"
                 file = open(datepath, 'r')
                 collect = file.read().splitlines()
                 name = input("종목 이름 입력 : ")
@@ -789,6 +849,8 @@ while True:
                                     pass             
                             else:
                                 pass
+                elif(choice8 == "3"):
+                    print("알림 : <메뉴로 돌아갑니다.>")
 
                 else :
                     print("알림 : <확인 후 다시 입력하세요.>")
@@ -808,6 +870,7 @@ while True:
     elif(choice =="4"):
         print("=========================메뉴===========================")
         choice9 = input("1 : 포트폴리오 초기화  2 : 수익률 조회 초기화 3 : 나가기\n번호 : ")
+        #포트폴리오 초기화
         if(choice9 == "1"):
             try:
                 print("알림 : <정말로 포트폴리오를 초기화 하시겠습니까?>")
@@ -825,8 +888,23 @@ while True:
                     continue
             except:
                 print("알림 : <초기화 중 오류가 발생했습니다.>")
+        #수익률 조회 초기화
         elif(choice9 == "2"):
-            pass
+            openitem = open_item() 
+            get_choice="\0"
+            get_choice = input("Y or N : ")
+            if(get_choice == "Y"):
+                reset_item()
+                reset_profit(openitem)
+                print("알림 : <초기화를 완료하였습니다.>")
+            elif(get_choice == "N"):
+                print("알림 : <메뉴로 돌아갑니다.>")
+                continue
+            else:
+                print("알림 : <입력을 확인해주세요>")
+                continue
+
+        #나가기
         elif(choice9 == "3"):
             print("알림 : <메뉴로 돌아갑니다.>")
             continue
