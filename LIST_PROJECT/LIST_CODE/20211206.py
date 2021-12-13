@@ -6,18 +6,14 @@ import pickle
 import datetime
 import requests
 
-#매도 수익 계산 중 오류가 발생하면 그 값을 빼야함 SELL.txt에서
-#완료 후 차트로 넘어감
-
-
 #수익률 함수
 def rate_import(code, firstdate, lastdate,item,nowDATE):
     #봇이 아님을 증명하는 값
     headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62'}
 
     try:
-        firstrate="0"
-        lastrate="0"
+        firstrate=""
+        lastrate=""
         for i in range(1,293+1):
             value=[]
             url="https://finance.naver.com/item/sise_day.nhn?code="+code+"&page="+str(i)
@@ -30,11 +26,11 @@ def rate_import(code, firstdate, lastdate,item,nowDATE):
             for i in range(0,len(eventvalue)):
                 if (eventvalue[i].get_text() != "0"):
                     value.append(eventvalue[i].get_text())
-                else :
+                else:
                     pass
             #종료날 시세 불러오는 코드
             for i in range(1,len(date)+1):
-                if(lastrate == "0"):
+                if(lastrate == ""):
                     DATE=date[i-1].get_text()
                     if (DATE==lastdate):
                         num = i 
@@ -54,7 +50,7 @@ def rate_import(code, firstdate, lastdate,item,nowDATE):
                 num=""
             #시작날 시세 불러오는 코드
             for j in range(1,len(date)+1):
-                if(firstrate == "0"):
+                if(firstrate == ""):
                     DATE2=date[j-1].get_text()
                     if (DATE2==firstdate):
                         num2 = j 
@@ -72,7 +68,7 @@ def rate_import(code, firstdate, lastdate,item,nowDATE):
                 else: 
                     pass
             #가격 모두 찾았을 때 종료
-            if (firstrate!="0" and lastrate!="0"):
+            if (firstrate!="" and lastrate!=""):
                 break
 
         get_first = format(int(firstrate),',')
@@ -470,10 +466,9 @@ def reset_profit(openitem):
         for i in range(0,len(openitem)):
             path = "/FINANCE/LIST_PROJECT/LIST_CODE/INQUIRY/PROFIT_DB/"+openitem[i]+".txt"
             openfile = open(path, 'w')
+            openfile.close()
     except:
         print("알림 : <수익률 초기화 중 오류가 발생했습니다.")
-    finally:
-        openfile.close()
 
 
         
@@ -770,6 +765,7 @@ while True:
 
     #출력
     elif(choice == "3"):
+        print("알림 : <시세 출력은 시세 조회를 통해 저장한 값을 가져오는 역할을 합니다.>")
         print("=========================메뉴===========================")
         choice7 = input("1 : 종목 정보 출력  2 : 수익률 정보 출력 3 : 나가기\n번호 : ")
         
